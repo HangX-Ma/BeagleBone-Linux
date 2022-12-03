@@ -33,9 +33,9 @@ graph LR
 
 ## Boot Files Composition
 
-[Angstrom](https://angstrom.s3.amazonaws.com/demo/beaglebone/index.html) provides some demo files. If you want to boot a embedded linux successfully, you need **MLO**, **u-boot.img**, **am335x-boneblack.dtb**, **uEnv.txt** and **rootfs.img**.
+[Angstrom](https://angstrom.s3.amazonaws.com/demo/beaglebone/index.html) provides some demo files. If you want to boot a embedded linux successfully, you need **MLO**, **u-boot.img**, **am335x-boneblack.dtb**, **uEnv.txt**, **uImage** and **rootfs.img**.
 
-**u-boot.img** is also named uImage(ELF binary format), which consist of 64 bytes of u-boot image header and zImage(ELF, Linux Kernel), using _mkImage_ command can append u-boot header to zImage.
+**u-boot.img** is always combined with uImage(ELF binary format), which consist of 64 bytes of u-boot image header and zImage(ELF, Linux Kernel), using _mkImage_ command can append u-boot header to zImage.
 
 **am335x-boneblack.dtb** is a 'Device Tree Binary' type file, used to cut off the dependencies of platform device enumeration from the linux kernel. Instead of adding hard coded hardware details into the linux kernel board file, every board vendors has to come up with a file called _DTS(Device Tree Source)_. This file actually consists of all details related to the board written using some pre defined syntaxes, which provides a data structure describes all the required peripherals of the board. DTS and DTSI will be complied using a Device Tree Compiler called DTC, converting DTS and DTSI files to the stream of bytes, DTB.
 
