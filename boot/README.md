@@ -39,7 +39,7 @@ graph LR
 
 **am335x-boneblack.dtb** is a 'Device Tree Binary' type file, used to cut off the dependencies of platform device enumeration from the linux kernel. Instead of adding hard coded hardware details into the linux kernel board file, every board vendors has to come up with a file called _DTS(Device Tree Source)_. This file actually consists of all details related to the board written using some pre defined syntaxes, which provides a data structure describes all the required peripherals of the board. DTS and DTSI will be complied using a Device Tree Compiler called DTC, converting DTS and DTSI files to the stream of bytes, DTB.
 
-**uEnv.txt** is a automate tool used in boot. It describe where to find the `uImage` and `dtb` file and load them to specific addresses, which devices, such as UART0, used to print out the system information, what the rootfs type, where to load the rootfs, etc. Otherwise, you need to press `space key` to enter the U-Boot Command Terminal to do them by yourself.
+**uEnv.txt** is a automate tool used in boot. It describe where to find the `uImage` and `dtb` file and load them to specific addresses, which devices, such as UART0, used to print out the system information, what the rootfs type, where to load the rootfs, etc. Otherwise, you need to press `space key` or `enter key` to enter the U-Boot Command Terminal to do them by yourself.
 
 ## Boot Configuration
 

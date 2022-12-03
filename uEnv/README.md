@@ -2,7 +2,7 @@
 
 [uEnv.txt](uEnv.txt) is an example of microSD card uEnv.txt configuration. On BeagleBone Black board, eMMC use the MMC1 interface and microSD card use the MMC0 interface. Remember we divide two partitions for microSD card? Let's take a look at some command applied on microSD u-boot.
 
-**NOTE:** If you want to use uboot terminal, please press space key during the start of the board.
+**NOTE:** If you want to use uboot terminal, please press `space key` or `enter key` during the start of the board.
 
 ## microSD mmc U-Boot
 
