@@ -39,13 +39,19 @@ Afterwards, you can run minicom with command `sudo minicom`.
 
 ### How serial protocol works?
 
+If you want to use serial booting, please read [boot.md](../boot/boot.md) first. You will notice we can only boot the embedded system when S2 button pressed. In summary, you need to do these required setting.
+
+- Unplug microSD card on the board.
+- The board is preferably powered using power adapter. Otherwise, when S2 button pressed, USB0 booting will be activated first, leading to unnecessary waiting for booting method switching.
+- Use USB to TTL serial port convertor to connect BBB's UART0 serial pins to PC.
+
 loading...
 
 ## TFTP Protocol
 
 If you want to transfer file between the host and the board using TFTP protocol, you need to move the files to your tftp server folder. Therefore, TFTP configuration needs to be done first.
 
-### TFTP Server Configuration 
+### TFTP Server Configuration
 
 - Install TFTP server and client tools
 

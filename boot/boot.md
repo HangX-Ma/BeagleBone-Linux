@@ -33,13 +33,36 @@ graph LR
 
 ## Boot Files Composition
 
-[Angstrom](https://angstrom.s3.amazonaws.com/demo/beaglebone/index.html) provides some demo files. If you want to boot a embedded linux successfully, you need **MLO**, **u-boot.img**, **am335x-boneblack.dtb**, **uEnv.txt**, **uImage** and **rootfs.img**.
+[Angstrom](https://angstrom.s3.amazonaws.com/demo/beaglebone/index.html) provides some demo files. If you want to boot a embedded linux successfully, you need **MLO**, **u-boot.img**, **am335x-boneblack.dtb**, **uEnv.txt**, **uImage** or **zImage** and **rootfs.img**.
 
-**u-boot.img** is always combined with uImage(ELF binary format), which consist of 64 bytes of u-boot image header and zImage(ELF, Linux Kernel), using _mkImage_ command can append u-boot header to zImage.
+**u-boot.img** is always combined with `uImage(ELF binary format)`, which consist of 64 bytes of u-boot image header and `zImage(ELF, Linux Kernel)`, using _mkImage_ command can append u-boot header to `zImage`. It acts like BIOS, actually the third stage boot loader tool.
+
+**U-Boot Header:** [L177-L190](https://github.com/EmcraftSystems/u-boot/blob/master/include/image.h#L177-L190).
+
+```c
+typedef struct image_header {
+    uint32_t ih_magic;  /* Image Header Magic Number */
+    uint32_t ih_hcrc;   /* Image Header CRC Checksum */
+    uint32_t ih_time;   /* Image Creation Timestamp */
+    uint32_t ih_size;   /* Image Data Size  */
+    uint32_t ih_load;   /* Data  Load  Address  */
+    uint32_t ih_ep;     /* Entry Point Address  */
+    uint32_t ih_dcrc;   /* Image Data CRC Checksum */
+    uint8_t  ih_os;     /* Operating System  */
+    uint8_t  ih_arch;   /* CPU architecture  */
+    uint8_t  ih_type;   /* Image Type   */
+    uint8_t  ih_comp;   /* Compression Type  */
+    uint8_t  ih_name[IH_NMLEN]; /* Image Name  */
+} image_header_t;
+```
+
+**zImage** is compressed version of the Linux kernel image that is self-extracting.
 
 **am335x-boneblack.dtb** is a 'Device Tree Binary' type file, used to cut off the dependencies of platform device enumeration from the linux kernel. Instead of adding hard coded hardware details into the linux kernel board file, every board vendors has to come up with a file called _DTS(Device Tree Source)_. This file actually consists of all details related to the board written using some pre defined syntaxes, which provides a data structure describes all the required peripherals of the board. DTS and DTSI will be complied using a Device Tree Compiler called DTC, converting DTS and DTSI files to the stream of bytes, DTB.
 
 **uEnv.txt** is a automate tool used in boot. It describe where to find the `uImage` and `dtb` file and load them to specific addresses, which devices, such as UART0, used to print out the system information, what the rootfs type, where to load the rootfs, etc. Otherwise, you need to press `space key` or `enter key` to enter the U-Boot Command Terminal to do them by yourself.
+
+**rootfs** is root file system, which contains all applications, libs and in most cases everything, including home folder.
 
 ## Boot Configuration
 

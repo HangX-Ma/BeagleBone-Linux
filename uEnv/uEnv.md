@@ -65,3 +65,5 @@ The microSD card has been divided into two partitions.
     ```bash
     env import -t <memory addr> <size in bytes>
     ```
+
+I have to mention that `loadaddr` and `fdtaddr` are environment variables defined in uboot. We can use the default ones.
