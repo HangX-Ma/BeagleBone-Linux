@@ -18,7 +18,7 @@ graph LR
 ```
 
 - **RBL** means 'ROM Boot Loader', which is the first stage boot loader. It does some initialization of the system such as _Stack setup_, _MPU WDT setup_, _DPLLs and clocks configurations_ and other initialization. Then it will search memory devices or other bootable interfaces for MLO or SPL. Afterwards, it copies MLO or SPL into the internal SRAM of the chip and execute it. The _[AM335x/AM335x and AMIC110 Sitara Processors Technical Reference Manual](../share/AM335x/AM335x_and_AMIC110_Sitara_Processors_Technical_Reference_Manual.pdf)_ explains the details of this procedure, at chapter **26**.
-- **SPL/MLO** means 'Second stage Program Loader' or 'Memory Loader'. It runs out of internal SRAM. RBL copies MLO from eternal memory device into internal SRAM through MMC interface, from eMMC memory, microSD card, etc. SPL and MLO are almost same except the fact that, MLO has a header which contains some info like load address, size of the image to follow, etc. These information in MLO image will be read by RBL. In summary, MLO/SPL does the following jobs:
+- **SPL/MLO** means 'Second stage Program Loader' or 'Memory Loader'. It runs out of internal SRAM. RBL copies MLO from eternal memory device into internal SRAM through MMC interface, from eMMC memory, microSD card, etc. SPL and MLO are almost same except the fact that, MLO has a header which contains some info, like **load address**, **size of the image to follow**, etc. These information in MLO image will be read by RBL. In summary, MLO/SPL does the following jobs:
   - It does UART console initialization to print out the debug messages.
   - Reconfigures the PLL to desired value.
   - Initialize the DDR registers to use the DDR memory.
@@ -30,6 +30,8 @@ graph LR
   - Boot sources: USB, eMMC, SD card, Ethernet, Serial port, NAND, Flash, etc.
 - **Linux Kernel** runs the linux operating system.
 - **RFS** is the short cut of 'Root File System', this is provided by linux operating system image.
+
+![boot sequence](share/boot-sequence.png)
 
 ## Boot Files Composition
 
@@ -56,7 +58,7 @@ typedef struct image_header {
 } image_header_t;
 ```
 
-**zImage** is compressed version of the Linux kernel image that is self-extracting.
+**zImage** is compressed version of the Linux kernel image that is self-extracting. U-Boot only support **uImage** currently!!!
 
 **am335x-boneblack.dtb** is a 'Device Tree Binary' type file, used to cut off the dependencies of platform device enumeration from the linux kernel. Instead of adding hard coded hardware details into the linux kernel board file, every board vendors has to come up with a file called _DTS(Device Tree Source)_. This file actually consists of all details related to the board written using some pre defined syntaxes, which provides a data structure describes all the required peripherals of the board. DTS and DTSI will be complied using a Device Tree Compiler called DTC, converting DTS and DTSI files to the stream of bytes, DTB.
 
@@ -162,4 +164,14 @@ You can use `GParted` GUI tools or you can just use the terminal commands.
     sudo mkfs.ext4 -L ROOTFS -E nodiscard /dec/sdx2
     ```
 
+- Unmount microSD card.
+
+    ```bash
+    udisksctrl unmount -b /dev/sdx1
+    udisksctrl unmount -b /dev/sdx2
+    udisksctrl power-off -b /dev/sdx
+    ```
+
 After all above done, copy `MLO`, `u-boot.img`, `zImage`, `am335x-boneblack.dtb` to `/BOOT` and your root file system unpacked from image to `/ROOTFS`. You can write your own `uEnv.txt` to automate the boot process.
+
+**NOTE: The `sync` command forces the data to be written to disk and frees the buffer for that data, so it's common to type `sync` after the disk written process to ensure that the data has been written correctly.**
