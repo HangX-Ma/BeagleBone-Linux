@@ -1,10 +1,31 @@
 # U-Boot
+<!-- TOC -->
+
+- [U-Boot](#u-boot)
+  - [1. U-Boot Compilation](#1-u-boot-compilation)
+    - [1.1 Compilation Result](#11-compilation-result)
+    - [1.2 MLO plus u-boot.img Test Result](#12-mlo-plus-u-bootimg-test-result)
+  - [2. Dive into U-Boot](#2-dive-into-u-boot)
+    - [2.1 Linux Kernel Compilation](#21-linux-kernel-compilation)
+      - [The board file](#the-board-file)
+      - [About initarmfs and creating initarmfs](#about-initarmfs-and-creating-initarmfs)
+        - [How to keep initramfs in to RAM?](#how-to-keep-initramfs-in-to-ram)
+        - [Generate independent initramfs](#generate-independent-initramfs)
+      - [Linux Kernel Compilation Steps](#linux-kernel-compilation-steps)
+        - [Error occurs in tag version newer than 4.4](#error-occurs-in-tag-version-newer-than-44)
+        - [Error occurs in tag 4.4](#error-occurs-in-tag-44)
+    - [2.2 Decode U-Boot header of uImage manually](#22-decode-u-boot-header-of-uimage-manually)
+  - [3. Minimalist root file system](#3-minimalist-root-file-system)
+    - [3.1 Busybox Compilation](#31-busybox-compilation)
+    - [Install root file system modules](#install-root-file-system-modules)
+
+<!-- /TOC -->
 
 U-Boot is the shortcut name of _'Universal Bootloader'_. The primary job of U-Boot is preparing the hardware to boot into Linux. U-Boot is responsible for initializing enough of the hardware so that the Linux kernel can be loaded into memory and begin its boot process.
 
 U-Boot basically tells the BIOS (Basic Input Output System) to run zImage with the options that tell zImage where to find the root filesystem so it knows how to start.
 
-## U-Boot Compilation
+## 1. U-Boot Compilation
 
 U-Boot source code can be found [here](https://source.denx.de/u-boot/u-boot.git) and the documentation on how to use and develop U-Boot can be found at <https://u‑boot.readthedocs.io>.
 
@@ -34,7 +55,7 @@ U-Boot source code can be found [here](https://source.denx.de/u-boot/u-boot.git)
 
 After all steps have been done, the `spl/u-boot-spl.bin` will be copied to generate `MLO` through `MKIMAGE MLO` command. Remember `MLO` and `u-boot.img` needs to be copied into `/BOOT/` partition in microSD card if you want to boot from microSD card.
 
-### Compilation Result
+### 1.1 Compilation Result
 
 ```bash
 api        configs   fs           Makefile      spl         u-boot.cfg.configs  u-boot-nodtb.bin
@@ -48,7 +69,7 @@ config.mk  examples  MAINTAINERS  scripts       u-boot.cfg  u-boot.map
 
 By default, the U-Boot has set the address in memory to use at **0x8200000**, we don't need to change it. You can check this value in `menu/General Setup`.
 
-### MLO plus u-boot.img Test Result
+### 1.2 MLO plus u-boot.img Test Result
 
 ```bash
 U-Boot 2019.01 (Dec 05 2022 - 19:14:46 +0800)
@@ -70,11 +91,11 @@ Press SPACE to abort autoboot in 5 seconds
 =>
 ```
 
-## Dive into U-Boot
+## 2. Dive into U-Boot
 
 We already have `MLO` and `u-boot.img` to finish the RBL and SPL. To load the linux kernel using U-Boot, we need a uImage. We can use the uImage file to test our compilation result and decode the U-Boot header of uImage manually. Therefore, we need to compile the linux kernel to support our research.
 
-### Linux Kernel Compilation
+### 2.1 Linux Kernel Compilation
 
 The BeagleBone official provide linux kernel on website <https://github.com/beagleboard/linux>.
 
@@ -162,7 +183,7 @@ make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- uImage dtbs LOADADDR=0x80008000 -j8
 # STEP 5: Generate modules you have selected
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j4 modules
-# STEP 6: Modules installation (After you have create ROOTFS)
+# STEP 6: Modules installation (After you have create ROOTFS) 
 make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=<path of the RFS> modules_install
 ```
 
@@ -170,7 +191,7 @@ Remember, the dynamically loadable kernel modules are not yet compiled (\<M> ent
 
 I have tested the compilation, tag 4.4 runs well. However, tag version newer than 4.4 all stick into an error. I think this is related some unfinished work. Someone has requested this issue and hope it will be resolved soon.
 
-##### $\downarrow$ Error occurs in tag version newer than 4.4
+##### Error occurs in tag version newer than 4.4
 
 ```bash
 ./include/linux/compiler.h:328:45: error: call to ‘__compiletime_assert_1140’ declared with attribute error: BUILD_BUG_ON failed: sizeof(_s) > sizeof(long)
@@ -188,7 +209,7 @@ Entry Point:  80008000
   Image arch/arm/boot/uImage is ready
 ```
 
-##### $\downarrow$ Error occurs in tag 4.4
+##### Error occurs in tag 4.4
 
 When you compile modules, this error will display.
 
@@ -216,7 +237,7 @@ This [page](https://lkml.org/lkml/2019/6/6/507) notices me that modified them to
     void cleanup_module(void) __attribute__((alias(#exitfn),__copy__(exitfn)));
 ```
 
-### Decode U-Boot header of uImage manually
+### 2.2 Decode U-Boot header of uImage manually
 
 We copy the `arch/arm/boot/uImage` and `arch/arm/boot/dts/am335x-boneblack.dtb` into the mircoSD card, partition `/BOOT`, together with previously loaded `MLO` and `u-boot.img`. Press S2 button to enter SD card boot mode and then press space to abort autoboot, entering U-Boot terminal.
 
@@ -231,3 +252,47 @@ We copy the `arch/arm/boot/uImage` and `arch/arm/boot/dts/am335x-boneblack.dtb` 
     ```bash
     md.l 0x82000000 4 # read four words
     ```
+
+## 3. Minimalist root file system
+
+**Busybox** is a software tool that enables you to create a customized root file system for your embedded linux. It is so flexible that you can remove all unwanted features, linux commands, directories, etc. This can meets your source requirements and fit a limited memory space requirement. The most important point is that busybox has the potential to significantly reduce the memory consumed by various linux commands by merging all the linux commands into one single binary.
+
+### 3.1 Busybox Compilation
+
+New version like 1.34.1 is quite different. For BeagleBone Black, you need to change 2 settings after you compile STEP 2.
+
+1. We want to build all the linux commands source code as a static binary instead of dynamic.
+   Setting -> Build Options -> [*] Build static binary (no shared libs) # Otherwise you need to load the modules.
+2. Setting -> Build Options -> (arm-linux-gnueabihf-) Cross compiler prefix
+
+If you don't determine the install prefix, the busybox will select `./install` folder by default.
+
+```bash
+# STEP 0: Please download the latest stable version busybox 
+# STEP1: Clear previous compiled or generated objects files.
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- distclean
+# STEP 2 : Apply default configuration and settings
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- defconfig
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- menuconfig
+# STEP 3 : Compile
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- -j8
+# STEP 4 : generate the busy box binary and minimal file system 
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- CONFIG_PREFIX=<install_path> install
+```
+
+### Install root file system modules
+
+You must remember what we haven't finished build modules in [linux kernel compilation](#linux-kernel-compilation-steps)(STEP 6). Now we can do this step, and the RFS path needs to be set where we install the root file system generated by busybox.
+
+```bash
+cd <linux kernel>
+make ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_MOD_PATH=<path of the RFS> modules_install
+```
+
+If you check the `install` folder in busybox workspace, in `install/lib/modules/<your kernel version>`, you can find some files, whose prefixes are modules with different suffixes.
+
+- The `modules.builtin` describe which modules statically installed in kernel.
+- The `modules.dep` illustrate the dependencies relationships between the loadable kernel modules.
+- The `modules.alias` contains alias extracted from the modules.
+
+There exit two way to add/remove the loadable modules into the linux kernel, `modprobe` and `insmod`. `modprobe` is a smarter command, which can intelligently add or remove a module, relying on the information in `modules.dep`. It will load the dependencies first. Oppositely, the `insmod` only does the load action.
