@@ -175,3 +175,72 @@ You can use `GParted` GUI tools or you can just use the terminal commands.
 After all above done, copy `MLO`, `u-boot.img`, `zImage`, `am335x-boneblack.dtb` to `/BOOT` and your root file system unpacked from image to `/ROOTFS`. You can write your own `uEnv.txt` to automate the boot process.
 
 **NOTE: The `sync` command forces the data to be written to disk and frees the buffer for that data, so it's common to type `sync` after the disk written process to ensure that the data has been written correctly.**
+
+## Buildroot
+
+As the `Buildroot` official written on the website, `Buildroot` is a simple, efficient and easy-to-use tool to generate embedded Linux systems through cross-compilation.
+
+I have introduced the **U-Boot**, **Beaglebone Black Linux Kernel**, **Busybox** in [u-boot.md](u-boot.md). With the assistance of `Buildroot`, which integrates all these components, we can easily generate all necessary files we want.
+
+You can find `beaglebone_defconfig` in `configs` file. Except for this, in `board/beaglebone`, you can find the manual guiding you to generate all necessary components, store in `output/images`.
+
+```bash
+output/images/
++-- am335x-boneblack.dtb
++-- am335x-bone.dtb
++-- am335x-evm.dtb
++-- am335x-evmsk.dtb
++-- boot.vfat
++-- MLO
++-- rootfs.ext2
++-- rootfs.tar
++-- sdcard.img
++-- u-boot.img
++-- uEnv.txt
++-- zImage
+```
+
+### Buildroot Compilation
+
+- On account of external toolchain `Linaro` we downloaded before, the builtin `Buildroot toolchain` is unnecessary. If some errors occurs because of unfitness toolchain, just use the default one.
+
+    ```bash
+    Toolchain ---> 
+        Toolchain type (External toolchain)
+            Toolchain (Custom toolchain)
+            Toolchain (Pre-installed toolchain)
+            Toolchain path (/home/<user name>/gcc-linaro-13.0.0-2022.11-x86_64_arm-linux-gnueabihf)
+    ```
+
+- You can change your `system hostname`, `system banner` in `System configuration`, etc.
+
+    ```bash
+    System configuration --->
+        Run a getty (login prompt) after boot
+            (ttyO0) TTY port
+                Baudrate(115200)
+    ```
+
+- In `Target packages`, I want to install the `openssh` in `Networking applications`.
+
+- In `Bootloaders`, no need to build `U-Boot` again. But if you want to build it again, please select appropriate version.
+
+- What we need to do in `Kernel Option` is change the binary format to `uImage` and load address to `0x80008000`. Don't select the latest kernel version, but SLTS version.
+
+#### Compilation Steps
+
+```bash
+# Select the default configuration for the target:
+make beaglebone_defconfig
+# Optional: modify the configuration:
+make menuconfig
+# Build
+make -j8
+```
+
+If your terminal throw an error like this, you just need to temporarily set the `LD_LIBRARY_PATH=`(type this command in terminal) empty.
+
+```bash
+You seem to have the current working directory in your
+LD_LIBRARY_PATH environment variable. This doesn't work.
+```
