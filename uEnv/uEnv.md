@@ -11,7 +11,7 @@ The microSD card has been divided into two partitions.
 1. Load the linux kernel image to the DDR memory from microSD card.
 
     ```bash
-    load mmc 0:1 0x82000000 /BOOT/uImage
+    load mmc 0:1 0x82000000 uImage
     ```
 
    - This command means we copy the `/boot/uImage` file from MMC0, partition1 to DDR memory at 0x82000000. uImage contains the linux kernel and the header of u-boot. MLO will not copies the u-boot into the internal RAM because the internal RAM is only 128 KB, obviously not fitting for u-boot. And this is a reason why we use MLO to manage memory.
@@ -25,7 +25,7 @@ The microSD card has been divided into two partitions.
 2. Load the dtb image to the DDR memory from microSD card.
 
     ```bash
-    load mmc 0:1 0x88000000 /BOOT/am335x-boneblack.dtb
+    load mmc 0:1 0x88000000 am335x-boneblack.dtb
     ```
 
     - Similarly, we copy `/boot/am335x-boneblack.dtb` from MMC0, partition1 to DDR memory at 0x88000000.

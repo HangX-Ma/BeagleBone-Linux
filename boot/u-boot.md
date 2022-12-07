@@ -18,6 +18,7 @@
   - [3. Minimalist root file system](#3-minimalist-root-file-system)
     - [3.1 Busybox Compilation](#31-busybox-compilation)
     - [3.2 Install root file system modules](#32-install-root-file-system-modules)
+    - [3.3 Further Operation](#33-further-operation)
 
 <!-- /TOC -->
 
@@ -296,3 +297,17 @@ If you check the `install` folder in busybox workspace, in `install/lib/modules/
 - The `modules.alias` contains alias extracted from the modules.
 
 There exit two way to add/remove the loadable modules into the linux kernel, `modprobe` and `insmod`. `modprobe` is a smarter command, which can intelligently add or remove a module, relying on the information in `modules.dep`. It will load the dependencies first. Oppositely, the `insmod` only does the load action.
+
+### 3.3 Further Operation
+
+After all above done, error occurs because of the `fs` incompleteness.
+
+- Lack of `/dev/ttyx`.
+
+```txt
+can't open /dev/tty4: No such file or directory
+can't open /dev/tty3: No such file or directory
+can't open /dev/tty2: No such file or directory
+```
+
+...

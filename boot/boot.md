@@ -217,7 +217,7 @@ output/images/
     ```bash
     System configuration --->
         Run a getty (login prompt) after boot
-            (ttyO0) TTY port
+            (console) TTY port
                 Baudrate(115200)
     ```
 
