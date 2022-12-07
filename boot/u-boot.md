@@ -304,10 +304,12 @@ After all above done, error occurs because of the `fs` incompleteness.
 
 - Lack of `/dev/ttyx`.
 
-```txt
-can't open /dev/tty4: No such file or directory
-can't open /dev/tty3: No such file or directory
-can't open /dev/tty2: No such file or directory
-```
+    ```txt
+    can't open /dev/tty4: No such file or directory
+    can't open /dev/tty3: No such file or directory
+    can't open /dev/tty2: No such file or directory
+    ```
+
+  - `mkdir dev` under your busybox `install` folder or where your file system locates at.
 
 ...
