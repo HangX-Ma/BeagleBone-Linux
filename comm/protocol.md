@@ -166,6 +166,12 @@ sudo vim /etc/exports
 sudo exportfs -arv
 sudo service nfs-kernel-server restart
 sudo service nfs-kernel-server status
+
+# check firewall status
+sudo ufw status
+# set rules or disable ufw
+sudo ufw disable
+sudo ufw allow from <client_ip> to any port nfs
 ```
 
 - `rw`: This option gives the **client** computer both read and write access to the volume.
@@ -175,7 +181,20 @@ sudo service nfs-kernel-server status
 
 ##### NFS Problems Record
 
-**I tried my best, but NFS seems run into a rabbit hole.** I can't mount the file system through NFS !!! _2022.12_
+**I tried my best, but NFS seems run into a rabbit hole.** I can't mount the file system through NFS !!! _2022.12.06_
+
+**I solved this problem!** `uEnv.txt` is the the root of all evils!!! _2022.12.08_
+
+- U-Boot seems not support variables nesting, so something like `serverip=xxx, user_ip=${serverip}, ip=${user_ip}` cannot work.
+- I change this command from `nfsroot=${serverip}:/srv/nfs/bbb` to `nfsroot=192.168.7.1:/srv/nfs/bbb` make NFS runs normally.
+
+  - Previous error:
+
+    ```bash
+    [   11.724371] NFS: sending MNT request for 192.168.7.1:/srv/nfs/bbb
+    [   11.731285] NFS: failed to create MNT RPC client, status=-101
+    [   11.737096] NFS: unable to mount server 192.168.7.1, error -101
+    ```
 
 - If you use Ubuntu version older than 16.04, NFS protocol support NFS version 2. Since Ubuntu 17.04, NFS protocol only support version 3, 4. What you need to do is modify the settings in `/etc/default/nfs-kernel-server`. Add `vers=4` to `uEnv.txt` after `nfsroot=` if kernel support NFSv4. In case of failure use a very helpful flag `nfsrootdebug` at the tail of the bootargs:
 
