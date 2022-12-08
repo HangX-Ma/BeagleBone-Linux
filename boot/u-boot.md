@@ -300,9 +300,9 @@ There exit two way to add/remove the loadable modules into the linux kernel, `mo
 
 ### 3.3 Further Operation
 
-After all above done, error occurs because of the `fs` incompleteness.
+After all above done, error occurs because of the `fs` incompleteness. NFS assists us to solving errors conveniently, for which we only need to change files located at our host machine.
 
-- Lack of `/dev/ttyx`.
+1. Lack of `/dev/ttyx`.
 
     ```txt
     can't open /dev/tty4: No such file or directory
@@ -310,6 +310,85 @@ After all above done, error occurs because of the `fs` incompleteness.
     can't open /dev/tty2: No such file or directory
     ```
 
-  - `mkdir dev` under your busybox `install` folder or where your file system locates at.
+   - `mkdir dev` under your busybox `install` folder or where your file system locates at.
+
+2. can't run `'/etc/init.d/rcS'`: No such file or directory.
+
+    Remember the end of control flow during linux boot is `init`. who finally launches the `init` userspace application. In busybox generated file system, you can find the `init` in `sbin` directory. There are two types of init programs in linux, `Busybox "init"` and `System V "init"`. The former tries to look for `rcS` script in `/etc/init.d/` and the latter looks for `inittab` script.
+
+    Generally, we use `rcS` to launch services/daemons during setup. That means, if you have any scripts or services to execute during starting up of the linux kernel, you can execute all those scripts and commands in this `rcS` file.
+
+    The S in `rcS` stands for start. Oppositely, K in `rcK` stands for kill. `rcS` will launch all the scripts which start with the letter S and the number along with S is the sequence, such as `S01logging`.
+
+    ```bash
+    cd <shared nfs folder>
+    sudo mkdir -p etc/init.d
+    cp <all the scripts in etc/init.d>
+    ```
+
+    I use the scripts provided by [niekiran/EmbeddedLinuxBBB](https://github.com/niekiran/EmbeddedLinuxBBB) in `scripts/etc/init.d` folder.
+
+3. Starting network: ifup: can't open `'/etc/network/interfaces'`: No such file or directory.
+
+    ```bash
+    mkdir -p /etc/network
+    touch interfaces
+    vi interfaces
+    ```
+
+    - Add the following code
+
+    ```bash
+    # interfaces(5) file used by ifup(8) and ifdown(8)
+
+    auto lo
+    iface lo inet loopback
+
+    auto eth0
+    iface eth0 inet static
+        address 192.168.7.2
+        netmask 255.255.255.0
+        network 192.168.7.0
+        gateway 192.168.7.1
+
+    auto usb0
+    iface usb0 inet static
+        address 192.168.6.2
+        netmask 255.255.255.0
+        network 192.168.6.0
+        gateway 192.168.6.1
+    ```
+
+4. Starting network: run-parts: `/etc/network/if-pre-up.d`: No such file or directory
+5. ifup: can't open `'/var/run/ifstate.new'`: No such file or directory
+
+    - Just create those files.
+    - Reuslt $\downarrow$.
+
+    ```shell
+    /etc/network # ifconfig
+    ifconfig: /proc/net/dev: No such file or directory
+    eth0      Link encap:Ethernet  HWaddr F4:B8:98:A9:36:2D  
+            inet addr:192.168.7.2  Bcast:192.168.7.255  Mask:255.255.255.0
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+            Interrupt:173 
+
+    lo        Link encap:Local Loopback  
+            inet addr:127.0.0.1  Mask:255.0.0.0
+            UP LOOPBACK RUNNING  MTU:65536  Metric:1
+
+    usb0      Link encap:Ethernet  HWaddr EA:CF:A1:A8:FB:F4  
+            inet addr:192.168.6.2  Bcast:0.0.0.0  Mask:255.255.255.0
+            UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+
+    /etc/network # ping 192.168.6.1
+    PING 192.168.6.1 (192.168.6.1): 56 data bytes
+    64 bytes from 192.168.6.1: seq=0 ttl=64 time=0.457 ms
+    64 bytes from 192.168.6.1: seq=1 ttl=64 time=0.846 ms
+    ^C
+    --- 192.168.6.1 ping statistics ---
+    2 packets transmitted, 2 packets received, 0% packet loss
+    round-trip min/avg/max = 0.457/0.651/0.846 ms
+    ```
 
 ...
