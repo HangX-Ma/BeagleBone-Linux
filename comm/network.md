@@ -46,11 +46,10 @@ iptables --table nat --append POSTROUTING --out-interface <wifi-interface> -j MA
 iptables --append FORWARD --in-interface <ethernet interface to share with> -j ACCEPT
 ```
 
+The first `iptables` command adds a rule to NAT table, enabling IP masquerade for your WAN. The second `iptables` command setup the FORWARD source.
+
 What you need to do is to find the wifi interfaces and the ethernet interfaces that you want to share to. In my case, the wifi interface is `wlp3s0` and the ethernet interfaces are what I mentioned above `enxf4b898a93630` and `enxf4b898a93632` _(Find your own ones)_.
 
-```bash
-sudo iptables --table nat --append POSTROUTING --out-interface wlp3s0 -j MASQUERADE
-sudo iptables --append FORWARD --in-interface enxf4b898a93630 -j ACCEPT
-```
+You can change the template [scripts/usbnet.sh](../boot/scripts/usbnet.sh) to fit your own demand. **Note:** This script needs to run whenever you restart your host machine, because its setting is temporary.
 
 Done.

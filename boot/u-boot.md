@@ -391,4 +391,6 @@ After all above done, error occurs because of the `fs` incompleteness. NFS assis
     round-trip min/avg/max = 0.457/0.651/0.846 ms
     ```
 
+Files introduced in this tutorial compressed and stored in _share/202212_rootfs.tar.gz_.
+
 ...
