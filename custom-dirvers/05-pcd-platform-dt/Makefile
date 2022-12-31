@@ -1,4 +1,4 @@
-obj-m := pcd_device_setup.o pcd_platform_driver.o
+obj-m := pcd_platform_driver_dt.o
 ARCH=arm
 CROSS_COMPILE=arm-linux-gnueabihf-
 KERN_DIR = /home/mcontour/linux

@@ -7,6 +7,8 @@
 #include <linux/platform_device.h>
 #include <linux/slab.h>
 #include <linux/mod_devicetable.h>
+#include<linux/of.h>
+#include<linux/of_device.h>
 #include "platform.h"
 
 #define MAX_DEVICES 10
@@ -59,7 +61,7 @@ struct pcdrv_private_data pcdrv_data;
 
 int check_permission(int dev_perm, int acc_mode) {
     if (dev_perm == RDWR) {
-        return 0;
+                return 0;
     }
 
     //ensures readonly access
@@ -229,21 +231,83 @@ int pcd_platform_driver_remove(struct platform_device *pdev) {
 
     pcdrv_data.total_devices--;
 
-    pr_info("A device is removed\n");
+    dev_info(&pdev->dev, "A device is removed\n");
 
     return 0;
 }
+
+
+struct pcdev_platform_data * pcdev_get_platdata_from_dt(struct device *dev) {
+    struct device_node *dev_node = dev->of_node;
+    struct pcdev_platform_data *pdata;
+
+    if (!dev_node) {
+        /* this probe didnt happen because of device tree node */    
+        return NULL;
+    }
+
+    /* allocate memory for platform data, Linux kernel will manage the memory */
+    pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+    if (!pdata) {
+        dev_info(dev, "Cannot allocate memory \n");
+        return ERR_PTR(-ENOMEM);
+    }
+
+    /* You can get the of_property_xxx method in linux/of.h */
+
+    /* Inquire device attribute and store the value into platform data structure */
+    if (of_property_read_string(dev_node, "org,device-serial-num", &pdata->serial_number)) {
+        dev_info(dev,"Missing serial number property\n");
+        return ERR_PTR(-EINVAL); // convert ERR to PTR
+    }
+
+    if(of_property_read_u32(dev_node, "org,size", &pdata->size) ){
+        dev_info(dev,"Missing size property\n");
+        return ERR_PTR(-EINVAL);
+    }
+
+    if(of_property_read_u32(dev_node, "org,perm", &pdata->perm) ){
+        dev_info(dev,"Missing permission property\n");
+        return ERR_PTR(-EINVAL);
+    }
+
+    return pdata;
+
+}
+
+
+struct of_device_id org_pcdev_dt_match[];
 
 /* Called when matched platform device is found */
 int pcd_platform_driver_probe(struct platform_device *pdev) {
     int ret;
     struct pcdev_private_data *dev_data;
     struct pcdev_platform_data *pdata;
+// -------------------- OF style matching --------------------
+    struct device *dev = &pdev->dev;
+    int driver_data;
 
-    pr_info("A device is detected\n");
+    /* used to store matched entry of 'of_device_id' list of this driver */
+    const struct of_device_id *match;
 
-    /* 1. Get the platform data */
-    pdata = (struct pcdev_platform_data*)dev_get_platdata(&pdev->dev);
+    dev_info(dev, "A device is detected\n");
+
+    /*match will always be NULL if LINUX doesnt support device tree i.e CONFIG_OF is off */
+    /* of_match_ptr() return `ptr` if CONFIG_OF is defined, otherwise NULL */
+    match = of_match_device(of_match_ptr(org_pcdev_dt_match), dev); // Tell if a driver's of_match_table matches a device.
+    if (match) {
+        pdata = pcdev_get_platdata_from_dt(dev);
+        if(IS_ERR(pdata)) {
+            return PTR_ERR(pdata);
+        }
+        driver_data = (long)match->data;
+    }
+    else {
+        /* Get the platform data */
+        pdata = (struct pcdev_platform_data*)dev_get_platdata(dev);
+        driver_data =  pdev->id_entry->driver_data;
+    }
+
     if (!pdata) {
         pr_info("No platform data available \n");
         return -EINVAL;
@@ -267,8 +331,8 @@ int pcd_platform_driver_probe(struct platform_device *pdev) {
     pr_info("Device size = %d\n", dev_data->pdata.size);
     pr_info("Device permission = %d\n",dev_data->pdata.perm);
 
-    pr_info("Config item 1 = %d\n",pcdev_config[pdev->id_entry->driver_data].config_item1 );
-    pr_info("Config item 2 = %d\n",pcdev_config[pdev->id_entry->driver_data].config_item2 );
+    pr_info("Config item 1 = %d\n",pcdev_config[driver_data].config_item1 );
+    pr_info("Config item 2 = %d\n",pcdev_config[driver_data].config_item2 );
 
     /* 4. Dynamically allocate memory for the device buffer using size information from the platform data */
     dev_data->buff = devm_kzalloc(&pdev->dev,dev_data->pdata.size,GFP_KERNEL);
@@ -278,7 +342,7 @@ int pcd_platform_driver_probe(struct platform_device *pdev) {
     }
 
     /* 5. Get the device number */
-    dev_data->dev_num = pcdrv_data.device_num_base + pdev->id;
+    dev_data->dev_num = pcdrv_data.device_num_base + pcdrv_data.total_devices;
 
     /* 6. Do cdev init and cdev add */
     cdev_init(&dev_data->cdev,&pcd_fops);
@@ -291,9 +355,10 @@ int pcd_platform_driver_probe(struct platform_device *pdev) {
     }
 
     /* 7. Create device file for the detected platform device */
-    pcdrv_data.device_pcd = device_create(pcdrv_data.class_pcd,NULL,dev_data->dev_num,NULL,"pcdev-%d",pdev->id);
+    pcdrv_data.device_pcd = device_create(pcdrv_data.class_pcd, NULL, dev_data->dev_num,\
+                                            NULL, "pcdev-%d", pcdrv_data.total_devices);
     if(IS_ERR(pcdrv_data.device_pcd)){
-        pr_err("Device create failed\n");
+        dev_err(dev, "Device create failed\n");
         ret = PTR_ERR(pcdrv_data.device_pcd);
         cdev_del(&dev_data->cdev);
         return ret;
@@ -302,7 +367,7 @@ int pcd_platform_driver_probe(struct platform_device *pdev) {
 
     pcdrv_data.total_devices++;
 
-    pr_info("Probe was successful\n");
+    dev_info(dev, "Probe was successful\n");
 
     return 0;
 }
@@ -317,12 +382,23 @@ struct platform_device_id pcdevs_ids[] =
 };
 
 
+/* OF style matching used for device tree */
+struct of_device_id org_pcdev_dt_match[] = {
+    {.compatible = "pcdev-A1x",.data = (void*)PCDEVA1X},
+    {.compatible = "pcdev-B1x",.data = (void*)PCDEVB1X},
+    {.compatible = "pcdev-C1x",.data = (void*)PCDEVC1X},
+    {.compatible = "pcdev-D1x",.data = (void*)PCDEVD1X},
+    { } /*Null termination*/
+};
+
+
 struct platform_driver pcd_platform_driver = {
     .probe = pcd_platform_driver_probe,
     .remove = pcd_platform_driver_remove,
     .id_table = pcdevs_ids,
     .driver = {
-        .name = "pseudo-char-device"
+        .name = "pseudo-char-device",
+        .of_match_table = of_match_ptr(org_pcdev_dt_match)
     }
 };
 

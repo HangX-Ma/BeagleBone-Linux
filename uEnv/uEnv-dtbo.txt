@@ -1,0 +1,14 @@
+console=ttyO0,115200n8
+loadaddr=0x82000000
+fdtaddr=0x88000000
+rootfspath=/dev/mmcblk0p2
+overlays=PCDEV0.dtbo PCDEV1.dtbo
+dtbopath=/lib/firmware
+ovenvsetup=setenv fdtaddr 0x87f00000;setenv fdtovaddr 0x87fc0000;
+fdtload=load mmc 0:1 ${fdtaddr} ${dtb};
+fdtcmd=fdt addr $fdtaddr;fdt resize 8192;
+fdtovload=for i in ${overlays};do echo Applying overlay...; load mmc 0:2 ${fdtovaddr} ${dtbopath}/${i}; fdt apply $fdtovaddr;done
+userargs=setenv bootargs console=${console} root=${rootfspath} rootfstype=ext4 rootwait debug earlyprintk mem=512M
+echocmd=echo "Booting from microSD ..."  
+uloadargs=load mmc 0:1 ${loadaddr} uImage; load mmc 0:1 ${fdtaddr} am335x-boneblack.dtb
+uenvcmd=run ovenvsetup ; run fdtload; run fdtcmd; run fdtovload; run echocmd;setenv autoload no;run uloadargs; run userargs; bootm ${loadaddr} - ${fdtaddr}
