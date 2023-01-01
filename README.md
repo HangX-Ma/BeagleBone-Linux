@@ -13,6 +13,7 @@ Embedded Linux study on BeagleBone Black Rev C, Cortex-A8, AM3358.
 - [x] **boot:** Introduce the principle of BBB board boot process.
 - [x] **comm:** Protocols, network settings and other content about communication between host and board.
 - [x] **uEnv:** Introduce how to write `uEnv.txt` and help you to understand it.
+- [x] **LKM:** Linux kernel module.
 - [ ] **share:** Materials about Ti AM335x chip and BeagleBone Black board.
 
 ## LICENSE
